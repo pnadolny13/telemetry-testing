@@ -1,0 +1,88 @@
+version: 1
+default_environment: dev
+project_id: 93d67842-d198-4548-80f5-e724d42d37e6
+plugins:
+  extractors:
+  - name: tap-csv
+    variant: meltanolabs
+    pip_url: git+https://github.com/MeltanoLabs/tap-csv.git
+  - name: tap-csv-bad
+    inherit_from: tap-csv
+  loaders:
+  - name: target-jsonl
+    variant: andyh1203
+    pip_url: target-jsonl
+  - name: target-jsonl_bad
+    inherit_from: target-jsonl
+  orchestrators:
+  - name: airflow
+    variant: apache
+    pip_url: apache-airflow==2.1.2 --constraint https://raw.githubusercontent.com/apache/airflow/constraints-2.1.2/constraints-${MELTANO__PYTHON_VERSION}.txt
+  transformers:
+  - name: dbt-postgres
+    pip_url: dbt-core~=1.0.0 dbt-postgres~=1.0.0
+  files:
+  - name: files-airflow
+    variant: meltano
+    pip_url: git+https://github.com/meltano/files-airflow.git
+schedules:
+- name: my_schedule
+  interval: '@hourly'
+  job: my_job
+- name: nested-example
+  interval: '@hourly'
+  job: nested
+- name: foo
+  interval: '@daily'
+  extractor: tap-gitlab
+  loader: target-jsonl
+  transform: skip
+  start_date: 2022-06-01 00:00:00
+environments:
+- name: dev
+  config:
+    plugins:
+      extractors:
+      - name: tap-csv
+        config:
+          files:
+          - entity: customers
+            path: $MELTANO_PROJECT_ROOT/data/customers.csv
+            keys:
+            - id
+      - name: tap-csv-bad
+        config:
+          files:
+          - entity: customers
+            path: /foo
+            keys:
+            - id
+      loaders:
+      - name: target-postgres
+        config:
+          user: meltano
+          dbname: warehouse
+          default_target_schema: public
+      - name: target-jsonl_bad
+        config:
+          destination_path: /foobar
+      transformers:
+      - name: dbt-postgres
+        config:
+          host: localhost
+          user: meltano
+          port: 5432
+          dbname: warehouse
+          schema: analytics
+- name: staging
+- name: prod
+jobs:
+- name: my_job
+  tasks:
+  - tap-gitlab target-jsonl
+  - tap-gitlab target-jsonl dbt-postgres:compile
+- name: nested
+  tasks:
+  - - tap-gitlab hide-gitlab-secrets target-jsonl
+    - tap-gitlab target-csv
+  - dbt:run

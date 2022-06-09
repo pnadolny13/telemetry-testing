@@ -1,0 +1,24 @@
+{
+  "plugin_type": "loaders",
+  "name": "target-jsonl",
+  "namespace": "target_jsonl",
+  "variant": "andyh1203",
+  "label": "JSON Lines (JSONL)",
+  "docs": "https://hub.meltano.com/loaders/jsonl.html",
+  "repo": "https://github.com/andyh1203/target-jsonl",
+  "pip_url": "target-jsonl",
+  "settings": [
+    {
+      "name": "destination_path",
+      "value": "output",
+      "description": "Sets the destination path the JSONL files are written to, relative to the project root. The directory needs to exist already, it will not be created automatically. To write JSONL files to the project root, set an empty string (`\"\"`)."
+    },
+    {
+      "name": "do_timestamp_file",
+      "kind": "boolean",
+      "value": false,
+      "label": "Include timestamp in file names",
+      "description": "Specifies if the files should get timestamped"
+    }
+  ]
+}
